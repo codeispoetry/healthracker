@@ -1,19 +1,27 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"database/sql"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
+	"os"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type ValueRequest struct {
-	Weight float32 `json:"weight"`
-	Diastolic int  `json:"diastolic"`
-	Systolic  int  `json:"systolic"`
+	Weight    float32 `json:"weight"`
+	Diastolic int     `json:"diastolic"`
+	Systolic  int     `json:"systolic"`
 }
 
 type ErrorResponse struct {
@@ -24,15 +32,21 @@ func main() {
 	// Initialize database
 	initDB()
 
+	// Generate certificates if they don't exist
+	if err := generateCerts(); err != nil {
+		log.Fatal("Failed to generate certificates:", err)
+	}
+
 	// Setup routes
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/post", handlePost)
-	http.HandleFunc("/list", handleList) 
+	http.HandleFunc("/list", handleList)
 
-	// Start server
-	fmt.Println("Health Tracker API server starting on :9001...")
+	// Start HTTPS server
+	fmt.Println("Health Tracker API server starting on :9001 (HTTPS)...")
 	fmt.Println("Open https://tom-rose.de/healthtracker/ in your browser")
-	log.Fatal(http.ListenAndServe(":9001", nil))
+	fmt.Println("For local access: https://localhost:9001")
+	log.Fatal(http.ListenAndServeTLS(":9001", "server.crt", "server.key", nil))
 }
 
 func handleHome(w http.ResponseWriter, r *http.Request) {
@@ -161,16 +175,102 @@ func initDB() {
 	}
 	defer db.Close()
 
-	// Create table if it doesn't exist
-	createTableSQL := `CREATE TABLE IF NOT EXISTS weights (
+	// Create tables if they don't exist
+	createWeightsTableSQL := `CREATE TABLE IF NOT EXISTS weights (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 		weight REAL NOT NULL
 	);`
 
-	_, err = db.Exec(createTableSQL)
+	createBloodTableSQL := `CREATE TABLE IF NOT EXISTS blood (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+		diastolic INTEGER NOT NULL,
+		systolic INTEGER NOT NULL
+	);`
+
+	_, err = db.Exec(createWeightsTableSQL)
 	if err != nil {
-		log.Fatal("Failed to create table:", err)
+		log.Fatal("Failed to create weights table:", err)
 	}
+
+	_, err = db.Exec(createBloodTableSQL)
+	if err != nil {
+		log.Fatal("Failed to create blood table:", err)
+	}
+
 	fmt.Println("Database initialized successfully")
+}
+
+func generateCerts() error {
+	// Check if certificates already exist
+	if _, err := os.Stat("server.crt"); err == nil {
+		if _, err := os.Stat("server.key"); err == nil {
+			fmt.Println("SSL certificates already exist")
+			return nil
+		}
+	}
+
+	fmt.Println("Generating SSL certificates...")
+
+	// Generate private key
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	// Create certificate template
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization:  []string{"Health Tracker"},
+			Country:       []string{"US"},
+			Province:      []string{""},
+			Locality:      []string{"San Francisco"},
+			StreetAddress: []string{""},
+			PostalCode:    []string{""},
+		},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: nil,
+		DNSNames:    []string{"localhost", "tom-rose.de"},
+	}
+
+	// Create certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate: %v", err)
+	}
+
+	// Save certificate
+	certOut, err := os.Create("server.crt")
+	if err != nil {
+		return fmt.Errorf("failed to open cert.pem for writing: %v", err)
+	}
+	defer certOut.Close()
+
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
+		return fmt.Errorf("failed to write certificate: %v", err)
+	}
+
+	// Save private key
+	keyOut, err := os.Create("server.key")
+	if err != nil {
+		return fmt.Errorf("failed to open key.pem for writing: %v", err)
+	}
+	defer keyOut.Close()
+
+	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return fmt.Errorf("failed to marshal private key: %v", err)
+	}
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privKeyBytes}); err != nil {
+		return fmt.Errorf("failed to write private key: %v", err)
+	}
+
+	fmt.Println("SSL certificates generated successfully")
+	return nil
 }
