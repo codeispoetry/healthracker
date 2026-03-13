@@ -234,14 +234,6 @@
                 <div class="legend-dot elevated"></div>
                 Elevated (120-129/&lt;80)
             </div>
-            <div class="legend-item">
-                <div class="legend-dot high"></div>
-                High (130-139/80-89)
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot dangerous"></div>
-                Stage 2+ (≥140/≥90)
-            </div>
         </div>
         
         <div id="stats" class="stats-grid" style="display: none;">
@@ -319,13 +311,7 @@
         }
         
         function categorizeBP(systolic, diastolic) {
-            if (systolic >= 180 || diastolic >= 120) {
-                return { category: 'Crisis', class: 'dangerous', color: '#dc3545' };
-            } else if (systolic >= 140 || diastolic >= 90) {
-                return { category: 'Stage 2 High', class: 'dangerous', color: '#dc3545' };
-            } else if (systolic >= 130 || diastolic >= 80) {
-                return { category: 'Stage 1 High', class: 'high', color: '#fd7e14' };
-            } else if (systolic >= 120 && diastolic < 80) {
+            if (systolic > 140 || diastolic > 90) {
                 return { category: 'Elevated', class: 'elevated', color: '#ffc107' };
             } else {
                 return { category: 'Normal', class: 'normal', color: '#28a745' };

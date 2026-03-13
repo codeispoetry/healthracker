@@ -174,11 +174,7 @@
         <div id="stats" class="stats-grid" style="display: none;">
             <!-- Stats will be populated by JavaScript -->
         </div>
-        
-        <div id="chartContainer" class="chart-container" style="display: none;">
-            <h3>📈 Weight Trend</h3>
-            <canvas id="weightChart" class="chart"></canvas>
-        </div>
+
         
         <div id="loading" class="loading">
             <p>🔄 Loading your weight data...</p>
@@ -222,7 +218,7 @@
                 }
                 
                 const data = await response.json();
-                weightData = data || [];
+                weightData = data.weight || [];
                 
                 document.getElementById('loading').style.display = 'none';
                 
@@ -232,7 +228,6 @@
                 }
                 
                 displayStats();
-                displayChart();
                 displayTable();
                 
             } catch (error) {
@@ -268,103 +263,8 @@
                 }
             }
             
-            const statsHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${currentWeight.toFixed(1)} kg</div>
-                    <div class="stat-label">Current Weight</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${avgWeight.toFixed(1)} kg</div>
-                    <div class="stat-label">Average Weight</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${minWeight.toFixed(1)} kg</div>
-                    <div class="stat-label">Lowest Recorded</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${maxWeight.toFixed(1)} kg</div>
-                    <div class="stat-label">Highest Recorded</div>
-                </div>
-            `;
-            
-            document.getElementById('stats').innerHTML = statsHTML;
-            document.getElementById('stats').style.display = 'grid';
         }
-        
-        function displayChart() {
-            if (weightData.length === 0) return;
-            
-            // Simple ASCII-style chart for now (could be enhanced with Chart.js later)
-            const canvas = document.getElementById('weightChart');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size
-            canvas.width = canvas.offsetWidth;
-            canvas.height = 300;
-            
-            const weights = weightData.map(entry => entry.weight).reverse(); // Reverse for chronological order
-            const minWeight = Math.min(...weights) - 1;
-            const maxWeight = Math.max(...weights) + 1;
-            const weightRange = maxWeight - minWeight;
-            
-            // Clear canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid lines
-            ctx.strokeStyle = '#e0e0e0';
-            ctx.lineWidth = 1;
-            
-            // Horizontal grid lines
-            for (let i = 0; i <= 5; i++) {
-                const y = (i / 5) * canvas.height;
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-            
-            // Vertical grid lines
-            const stepX = canvas.width / Math.max(1, weights.length - 1);
-            for (let i = 0; i < weights.length; i++) {
-                const x = i * stepX;
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            
-            // Draw weight line
-            ctx.strokeStyle = '#4CAF50';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            for (let i = 0; i < weights.length; i++) {
-                const x = i * stepX;
-                const y = canvas.height - ((weights[i] - minWeight) / weightRange) * canvas.height;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.stroke();
-            
-            // Draw data points
-            ctx.fillStyle = '#2E7D32';
-            for (let i = 0; i < weights.length; i++) {
-                const x = i * stepX;
-                const y = canvas.height - ((weights[i] - minWeight) / weightRange) * canvas.height;
-                
-                ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-            
-            document.getElementById('chartContainer').style.display = 'block';
-        }
-        
+       
         function displayTable() {
             if (weightData.length === 0) return;
             

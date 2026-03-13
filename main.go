@@ -153,7 +153,18 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 		Weight    float32 `json:"weight"`
 	}
 
-	var entries []WeightEntry
+	type BloodEntry struct {
+		Timestamp string `json:"timestamp"`
+		Diastolic int    `json:"diastolic"`
+		Systolic  int    `json:"systolic"`
+	}
+
+	type ListResponse struct {
+		Weight []WeightEntry `json:"weight"`
+		Blood  []BloodEntry  `json:"blood"`
+	}
+
+	var weightEntries []WeightEntry
 	for rows.Next() {
 		var entry WeightEntry
 		err := rows.Scan(&entry.Timestamp, &entry.Weight)
@@ -162,11 +173,36 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to read weight entry"})
 			return
 		}
-		entries = append(entries, entry)
+		weightEntries = append(weightEntries, entry)
+	}
+
+	rows, err = db.Query("SELECT timestamp, diastolic, systolic FROM blood ORDER BY timestamp DESC")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to query blood pressure"})
+		return
+	}
+	defer rows.Close()
+
+	var bloodEntries []BloodEntry
+	for rows.Next() {
+		var entry BloodEntry
+		err := rows.Scan(&entry.Timestamp, &entry.Diastolic, &entry.Systolic)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to read blood pressure entry"})
+			return
+		}
+		bloodEntries = append(bloodEntries, entry)
+	}
+
+	response := ListResponse{
+		Weight: weightEntries,
+		Blood:  bloodEntries,
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(entries)
+	json.NewEncoder(w).Encode(response)
 }
 
 func handleBloodList(w http.ResponseWriter, r *http.Request) {
