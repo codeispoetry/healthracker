@@ -110,7 +110,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>Toms Health Tracker</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Toms Health Tracker</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="weights.html" style="background-color: #af4c96; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">📊 Weight History</a>
+                <a href="blood.html" style="background-color: #2196F3; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">🩺 BP History</a>
+            </div>
+        </div>
         <form id="healthForm">
             <div class="form-group">
                 <label for="weight">Weight (kg):</label>
@@ -133,6 +139,7 @@
         
         <div id="result" class="result"></div>
     </div>
+
 
     <script>
         document.getElementById('healthForm').addEventListener('submit', async function(e) {

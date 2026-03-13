@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Pressure History - Health Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="View your blood pressure tracking history and trends">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Health Tracker">
+    <meta name="msapplication-TileColor" content="#4CAF50">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .nav-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .nav-link:hover {
+            background-color: #45a049;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #4CAF50, #66BB6A);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+        }
+        .stat-card.danger {
+            background: linear-gradient(135deg, #f44336, #e57373);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .chart-container {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .chart {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+        .bp-legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .normal { background-color: #28a745; }
+        .elevated { background-color: #ffc107; }
+        .high { background-color: #fd7e14; }
+        .dangerous { background-color: #dc3545; }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background-color: #4CAF50;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        .data-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .data-table tr.elevated {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
+        .data-table tr.high {
+            background-color: #ffeaa7 !important;
+            border-left: 4px solid #fd7e14;
+        }
+        .data-table tr.dangerous {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545;
+        }
+        .bp-reading {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .bp-category {
+            font-size: 0.85rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .trend {
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+        .trend-up {
+            color: #dc3545;
+        }
+        .trend-down {
+            color: #28a745;
+        }
+        .trend-stable {
+            color: #6c757d;
+        }
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .data-table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🩺 Blood Pressure History</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="weights.html" class="nav-link">📊 Weight History</a>
+                <a href="index.html" class="nav-link">← Add New Entry</a>
+            </div>
+        </div>
+        
+        <div class="bp-legend">
+            <div class="legend-item">
+                <div class="legend-dot normal"></div>
+                Normal (&lt; 120/80)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot elevated"></div>
+                Elevated (120-129/&lt;80)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot high"></div>
+                High (130-139/80-89)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot dangerous"></div>
+                Stage 2+ (≥140/≥90)
+            </div>
+        </div>
+        
+        <div id="stats" class="stats-grid" style="display: none;">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+        
+        <div id="chartContainer" class="chart-container" style="display: none;">
+            <h3>📈 Blood Pressure Trend</h3>
+            <canvas id="bpChart" class="chart"></canvas>
+        </div>
+        
+        <div id="loading" class="loading">
+            <p>🔄 Loading your blood pressure data...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <!-- Error messages will appear here -->
+        </div>
+        
+        <div id="noData" class="no-data" style="display: none;">
+            <p>📝 No blood pressure data found.</p>
+            <p><a href="index.html" class="nav-link">Add your first blood pressure reading</a></p>
+        </div>
+        
+        <div id="tableContainer" style="display: none;">
+            <h3>📋 Detailed Records</h3>
+            <table id="dataTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Blood Pressure</th>
+                        <th>Category</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let bpData = [];
+        
+        async function loadBloodPressureData() {
+            try {
+                const response = await fetch('https://tom-rose.de:9001/blood');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                bpData = data || [];
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (bpData.length === 0) {
+                    document.getElementById('noData').style.display = 'block';
+                    return;
+                }
+                
+                displayStats();
+                displayChart();
+                displayTable();
+                
+            } catch (error) {
+                console.error('Error loading blood pressure data:', error);
+                document.getElementById('loading').style.display = 'none';
+                const errorDiv = document.getElementById('error');
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `<strong>Error loading data:</strong> ${error.message}<br>Please check your connection and try refreshing the page.`;
+            }
+        }
+        
+        function categorizeBP(systolic, diastolic) {
+            if (systolic >= 180 || diastolic >= 120) {
+                return { category: 'Crisis', class: 'dangerous', color: '#dc3545' };
+            } else if (systolic >= 140 || diastolic >= 90) {
+                return { category: 'Stage 2 High', class: 'dangerous', color: '#dc3545' };
+            } else if (systolic >= 130 || diastolic >= 80) {
+                return { category: 'Stage 1 High', class: 'high', color: '#fd7e14' };
+            } else if (systolic >= 120 && diastolic < 80) {
+                return { category: 'Elevated', class: 'elevated', color: '#ffc107' };
+            } else {
+                return { category: 'Normal', class: 'normal', color: '#28a745' };
+            }
+        }
+        
+        function displayStats() {
+            if (bpData.length === 0) return;
+            
+            const latest = bpData[0];
+            const avgSystolic = bpData.reduce((sum, entry) => sum + entry.systolic, 0) / bpData.length;
+            const avgDiastolic = bpData.reduce((sum, entry) => sum + entry.diastolic, 0) / bpData.length;
+            
+            // Count categories
+            let normalCount = 0, elevatedCount = 0, highCount = 0, dangerousCount = 0;
+            
+            bpData.forEach(entry => {
+                const cat = categorizeBP(entry.systolic, entry.diastolic);
+                switch (cat.class) {
+                    case 'normal': normalCount++; break;
+                    case 'elevated': elevatedCount++; break;
+                    case 'high': highCount++; break;
+                    case 'dangerous': dangerousCount++; break;
+                }
+            });
+            
+            const latestCat = categorizeBP(latest.systolic, latest.diastolic);
+            let currentCardClass = '';
+            if (latestCat.class === 'elevated') currentCardClass = 'warning';
+            if (latestCat.class === 'high' || latestCat.class === 'dangerous') currentCardClass = 'danger';
+            
+            const statsHTML = `
+                <div class="stat-card ${currentCardClass}">
+                    <div class="stat-value">${latest.systolic}/${latest.diastolic}</div>
+                    <div class="stat-label">Latest Reading</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${Math.round(avgSystolic)}/${Math.round(avgDiastolic)}</div>
+                    <div class="stat-label">Average Reading</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${normalCount}</div>
+                    <div class="stat-label">Normal Readings</div>
+                </div>
+                <div class="stat-card ${(elevatedCount + highCount + dangerousCount) > 0 ? 'warning' : ''}">
+                    <div class="stat-value">${elevatedCount + highCount + dangerousCount}</div>
+                    <div class="stat-label">Elevated+ Readings</div>
+                </div>
+            `;
+            
+            document.getElementById('stats').innerHTML = statsHTML;
+            document.getElementById('stats').style.display = 'grid';
+        }
+        
+        function displayChart() {
+            if (bpData.length === 0) return;
+            
+            const canvas = document.getElementById('bpChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+            
+            // Get data in chronological order
+            const systolicData = bpData.map(entry => entry.systolic).reverse();
+            const diastolicData = bpData.map(entry => entry.diastolic).reverse();
+            
+            const minValue = Math.min(...systolicData, ...diastolicData) - 10;
+            const maxValue = Math.max(...systolicData, ...diastolicData) + 10;
+            const valueRange = maxValue - minValue;
+            
+            // Clear canvas
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid lines
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            
+            // Horizontal grid lines with BP reference lines
+            const referenceLines = [80, 90, 120, 130, 140];
+            referenceLines.forEach(value => {
+                if (value >= minValue && value <= maxValue) {
+                    const y = canvas.height - ((value - minValue) / valueRange) * canvas.height;
+                    ctx.strokeStyle = value === 120 || value === 80 ? '#ff9800' : '#e0e0e0';
+                    ctx.lineWidth = value === 120 || value === 80 ? 2 : 1;
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            });
+            
+            // Vertical grid lines
+            const stepX = canvas.width / Math.max(1, systolicData.length - 1);
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < systolicData.length; i++) {
+                const x = i * stepX;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw systolic line
+            ctx.strokeStyle = '#dc3545';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i < systolicData.length; i++) {
+                const x = i * stepX;
+                const y = canvas.height - ((systolicData[i] - minValue) / valueRange) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Draw diastolic line
+            ctx.strokeStyle = '#007bff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i < diastolicData.length; i++) {
+                const x = i * stepX;
+                const y = canvas.height - ((diastolicData[i] - minValue) / valueRange) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Draw data points
+            for (let i = 0; i < systolicData.length; i++) {
+                const x = i * stepX;
+                
+                // Systolic points
+                const sysY = canvas.height - ((systolicData[i] - minValue) / valueRange) * canvas.height;
+                ctx.fillStyle = '#dc3545';
+                ctx.beginPath();
+                ctx.arc(x, sysY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Diastolic points
+                const diaY = canvas.height - ((diastolicData[i] - minValue) / valueRange) * canvas.height;
+                ctx.fillStyle = '#007bff';
+                ctx.beginPath();
+                ctx.arc(x, diaY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            document.getElementById('chartContainer').style.display = 'block';
+        }
+        
+        function displayTable() {
+            if (bpData.length === 0) return;
+            
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+            
+            bpData.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                const category = categorizeBP(entry.systolic, entry.diastolic);
+                
+                // Add category class to row
+                row.classList.add(category.class);
+                
+                // Format timestamp
+                const date = new Date(entry.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                // Calculate trend
+                let trendHTML = '';
+                if (index < bpData.length - 1) {
+                    const current = entry;
+                    const previous = bpData[index + 1];
+                    const sysChange = current.systolic - previous.systolic;
+                    const diaChange = current.diastolic - previous.diastolic;
+                    
+                    if (Math.abs(sysChange) <= 2 && Math.abs(diaChange) <= 2) {
+                        trendHTML = '<span class="trend trend-stable">→ Stable</span>';
+                    } else if (sysChange > 0 || diaChange > 0) {
+                        trendHTML = `<span class="trend trend-up">↗ Higher</span>`;
+                    } else {
+                        trendHTML = `<span class="trend trend-down">↘ Lower</span>`;
+                    }
+                }
+                
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td><span class="bp-reading">${entry.systolic}/${entry.diastolic} mmHg</span></td>
+                    <td><span class="bp-category" style="background-color: ${category.color}">${category.category}</span></td>
+                    <td>${trendHTML}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('tableContainer').style.display = 'block';
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadBloodPressureData);
+        
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

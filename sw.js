@@ -2,6 +2,8 @@ const CACHE_NAME = 'health-tracker-v1';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/weights.html',
+  '/blood.html',
   '/manifest.json',
   '/icon.svg',
   '/icon-512.svg',
@@ -43,7 +45,7 @@ self.addEventListener('fetch', (event) => {
   console.log('Service Worker: Fetch', event.request.url);
   
   // Strategy: Cache First with Network Fallback for static assets
-  if (event.request.url.includes('/post') || event.request.url.includes('/list')) {
+  if (event.request.url.includes('/post') || event.request.url.includes('/list') || event.request.url.includes('/blood')) {
     // For API calls, try network first, then show offline message
     event.respondWith(
       fetch(event.request)

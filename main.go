@@ -41,6 +41,7 @@ func main() {
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/post", handlePost)
 	http.HandleFunc("/list", handleList)
+	http.HandleFunc("/blood", handleBloodList)
 
 	// Start HTTPS server
 	fmt.Println("Health Tracker API server starting on :9001 (HTTPS)...")
@@ -159,6 +160,57 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to read weight entry"})
+			return
+		}
+		entries = append(entries, entry)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(entries)
+}
+
+func handleBloodList(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Error: "Method not allowed. Use GET to list blood pressure values.",
+		})
+		return
+	}
+
+	// Enable CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	db, err := sql.Open("sqlite3", "diary.db")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Database error"})
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT timestamp, diastolic, systolic FROM blood ORDER BY timestamp DESC")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to query blood pressure"})
+		return
+	}
+	defer rows.Close()
+
+	type BloodEntry struct {
+		Timestamp string `json:"timestamp"`
+		Diastolic int    `json:"diastolic"`
+		Systolic  int    `json:"systolic"`
+	}
+
+	var entries []BloodEntry
+	for rows.Next() {
+		var entry BloodEntry
+		err := rows.Scan(&entry.Timestamp, &entry.Diastolic, &entry.Systolic)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to read blood pressure entry"})
 			return
 		}
 		entries = append(entries, entry)
