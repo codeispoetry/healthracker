@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blood Pressure History - Health Tracker</title>
+    <title>Toms Blutdruck</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="View your blood pressure tracking history and trends">
@@ -117,10 +117,8 @@
             border-radius: 50%;
             margin-right: 8px;
         }
-        .normal { background-color: #28a745; }
         .elevated { background-color: #ffc107; }
-        .high { background-color: #fd7e14; }
-        .dangerous { background-color: #dc3545; }
+
         
         .data-table {
             width: 100%;
@@ -187,19 +185,7 @@
             padding: 40px;
             color: #666;
         }
-        .trend {
-            font-size: 0.9rem;
-            margin-left: 10px;
-        }
-        .trend-up {
-            color: #dc3545;
-        }
-        .trend-down {
-            color: #28a745;
-        }
-        .trend-stable {
-            color: #6c757d;
-        }
+
         @media (max-width: 600px) {
             .header {
                 flex-direction: column;
@@ -228,21 +214,16 @@
         <div class="bp-legend">
             <div class="legend-item">
                 <div class="legend-dot normal"></div>
-                Normal (&lt; 120/80)
+                Normal ( &lt;= 140/90)
             </div>
             <div class="legend-item">
                 <div class="legend-dot elevated"></div>
-                Elevated (120-129/&lt;80)
+                Erhöht ( &gt; 140/90)
             </div>
         </div>
         
         <div id="stats" class="stats-grid" style="display: none;">
             <!-- Stats will be populated by JavaScript -->
-        </div>
-        
-        <div id="chartContainer" class="chart-container" style="display: none;">
-            <h3>📈 Blood Pressure Trend</h3>
-            <canvas id="bpChart" class="chart"></canvas>
         </div>
         
         <div id="loading" class="loading">
@@ -259,16 +240,8 @@
         </div>
         
         <div id="tableContainer" style="display: none;">
-            <h3>📋 Detailed Records</h3>
             <table id="dataTable" class="data-table">
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Blood Pressure</th>
-                        <th>Category</th>
-                        <th>Trend</th>
-                    </tr>
-                </thead>
+               
                 <tbody>
                     <!-- Data will be populated by JavaScript -->
                 </tbody>
@@ -298,7 +271,6 @@
                 }
                 
                 displayStats();
-                displayChart();
                 displayTable();
                 
             } catch (error) {
@@ -312,7 +284,7 @@
         
         function categorizeBP(systolic, diastolic) {
             if (systolic > 140 || diastolic > 90) {
-                return { category: 'Elevated', class: 'elevated', color: '#ffc107' };
+                return { category: 'Erhöht', class: 'elevated', color: '#ffc107' };
             } else {
                 return { category: 'Normal', class: 'normal', color: '#28a745' };
             }
@@ -344,21 +316,17 @@
             if (latestCat.class === 'high' || latestCat.class === 'dangerous') currentCardClass = 'danger';
             
             const statsHTML = `
-                <div class="stat-card ${currentCardClass}">
-                    <div class="stat-value">${latest.systolic}/${latest.diastolic}</div>
-                    <div class="stat-label">Latest Reading</div>
-                </div>
                 <div class="stat-card">
                     <div class="stat-value">${Math.round(avgSystolic)}/${Math.round(avgDiastolic)}</div>
-                    <div class="stat-label">Average Reading</div>
+                    <div class="stat-label">Durchschnitt</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value">${normalCount}</div>
-                    <div class="stat-label">Normal Readings</div>
+                    <div class="stat-label">Normale Messungen</div>
                 </div>
                 <div class="stat-card ${(elevatedCount + highCount + dangerousCount) > 0 ? 'warning' : ''}">
                     <div class="stat-value">${elevatedCount + highCount + dangerousCount}</div>
-                    <div class="stat-label">Elevated+ Readings</div>
+                    <div class="stat-label">Erhöhte Messungen</div>
                 </div>
             `;
             
@@ -366,104 +334,7 @@
             document.getElementById('stats').style.display = 'grid';
         }
         
-        function displayChart() {
-            if (bpData.length === 0) return;
-            
-            const canvas = document.getElementById('bpChart');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size
-            canvas.width = canvas.offsetWidth;
-            canvas.height = 300;
-            
-            // Get data in chronological order
-            const systolicData = bpData.map(entry => entry.systolic).reverse();
-            const diastolicData = bpData.map(entry => entry.diastolic).reverse();
-            
-            const minValue = Math.min(...systolicData, ...diastolicData) - 10;
-            const maxValue = Math.max(...systolicData, ...diastolicData) + 10;
-            const valueRange = maxValue - minValue;
-            
-            // Clear canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid lines
-            ctx.strokeStyle = '#e0e0e0';
-            ctx.lineWidth = 1;
-            
-            // Horizontal grid lines with BP reference lines
-            const referenceLines = [80, 90, 120, 130, 140];
-            referenceLines.forEach(value => {
-                if (value >= minValue && value <= maxValue) {
-                    const y = canvas.height - ((value - minValue) / valueRange) * canvas.height;
-                    ctx.strokeStyle = value === 120 || value === 80 ? '#ff9800' : '#e0e0e0';
-                    ctx.lineWidth = value === 120 || value === 80 ? 2 : 1;
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(canvas.width, y);
-                    ctx.stroke();
-                }
-            });
-            
-            // Vertical grid lines
-            const stepX = canvas.width / Math.max(1, systolicData.length - 1);
-            ctx.strokeStyle = '#e0e0e0';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < systolicData.length; i++) {
-                const x = i * stepX;
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            
-            // Draw systolic line
-            ctx.strokeStyle = '#dc3545';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (let i = 0; i < systolicData.length; i++) {
-                const x = i * stepX;
-                const y = canvas.height - ((systolicData[i] - minValue) / valueRange) * canvas.height;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            
-            // Draw diastolic line
-            ctx.strokeStyle = '#007bff';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            for (let i = 0; i < diastolicData.length; i++) {
-                const x = i * stepX;
-                const y = canvas.height - ((diastolicData[i] - minValue) / valueRange) * canvas.height;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            
-            // Draw data points
-            for (let i = 0; i < systolicData.length; i++) {
-                const x = i * stepX;
-                
-                // Systolic points
-                const sysY = canvas.height - ((systolicData[i] - minValue) / valueRange) * canvas.height;
-                ctx.fillStyle = '#dc3545';
-                ctx.beginPath();
-                ctx.arc(x, sysY, 4, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Diastolic points
-                const diaY = canvas.height - ((diastolicData[i] - minValue) / valueRange) * canvas.height;
-                ctx.fillStyle = '#007bff';
-                ctx.beginPath();
-                ctx.arc(x, diaY, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-            
-            document.getElementById('chartContainer').style.display = 'block';
-        }
-        
+  
         function displayTable() {
             if (bpData.length === 0) return;
             
@@ -479,30 +350,13 @@
                 
                 // Format timestamp
                 const date = new Date(entry.timestamp);
-                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-                
-                // Calculate trend
-                let trendHTML = '';
-                if (index < bpData.length - 1) {
-                    const current = entry;
-                    const previous = bpData[index + 1];
-                    const sysChange = current.systolic - previous.systolic;
-                    const diaChange = current.diastolic - previous.diastolic;
-                    
-                    if (Math.abs(sysChange) <= 2 && Math.abs(diaChange) <= 2) {
-                        trendHTML = '<span class="trend trend-stable">→ Stable</span>';
-                    } else if (sysChange > 0 || diaChange > 0) {
-                        trendHTML = `<span class="trend trend-up">↗ Higher</span>`;
-                    } else {
-                        trendHTML = `<span class="trend trend-down">↘ Lower</span>`;
-                    }
-                }
+                const formattedDate = date.toLocaleDateString([], { weekday: 'long', day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Uhr";
+      
                 
                 row.innerHTML = `
                     <td>${formattedDate}</td>
                     <td><span class="bp-reading">${entry.systolic}/${entry.diastolic} mmHg</span></td>
                     <td><span class="bp-category" style="background-color: ${category.color}">${category.category}</span></td>
-                    <td>${trendHTML}</td>
                 `;
                 
                 tbody.appendChild(row);
