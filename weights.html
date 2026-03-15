@@ -164,10 +164,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Weight History</h1>
+            <h1>📊 Gewichtsverlauf</h1>
             <div style="display: flex; gap: 10px;">
-                <a href="blood.html" class="nav-link">🩺 Blood Pressure</a>
-                <a href="index.html" class="nav-link">← Add New Entry</a>
+                <a href="blood.html" class="nav-link">🩺 Blutdruck</a>
+                <a href="index.html" class="nav-link">← Neuer Eintrag</a>
             </div>
         </div>
         
@@ -190,12 +190,11 @@
         </div>
         
         <div id="tableContainer" style="display: none;">
-            <h3>📋 Detailed Records</h3>
             <table id="dataTable" class="data-table">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
-                        <th>Weight (kg)</th>
+                        <th>Datum & Uhrzeit</th>
+                        <th>Gewicht (kg)</th>
                         <th>Trend</th>
                     </tr>
                 </thead>
@@ -276,7 +275,7 @@
                 
                 // Format timestamp
                 const date = new Date(entry.timestamp);
-                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                const formattedDate = date.toLocaleDateString([], { weekday: 'long', day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Uhr";
                 
                 // Calculate trend
                 let trendHTML = '';
@@ -286,7 +285,7 @@
                     const change = currentWeight - previousWeight;
                     
                     if (Math.abs(change) < 0.1) {
-                        trendHTML = '<span class="weight-trend trend-stable">→ Stable</span>';
+                        trendHTML = '<span class="weight-trend trend-stable">→ Stabil</span>';
                     } else if (change > 0) {
                         trendHTML = `<span class="weight-trend trend-up">↗ +${change.toFixed(1)} kg</span>`;
                     } else {
