@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toms Blutdruck</title>
+    <title>Blutdruck</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="View your blood pressure tracking history and trends">
@@ -204,10 +204,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🩺 Toms Blutdruck</h1>
+            <h1>🩺 Blutdruck</h1>
             <div style="display: flex; gap: 10px;">
-                <a href="weights.html" class="nav-link">📊 Gewichtsverlauf</a>
-                <a href="index.html" class="nav-link">← Neuer Eintrag</a>
+                <a href="weights.html" class="nav-link">📊 Gewicht</a>
+                <a href="index.html" class="nav-link">← Neu</a>
             </div>
         </div>
         
@@ -257,7 +257,7 @@
                 const response = await fetch('https://tom-rose.de:9001/blood');
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP Fehler! Status: ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -274,11 +274,11 @@
                 displayTable();
                 
             } catch (error) {
-                console.error('Error loading blood pressure data:', error);
+                console.error('Fehler beim Laden der Blutdruckdaten:', error);
                 document.getElementById('loading').style.display = 'none';
                 const errorDiv = document.getElementById('error');
                 errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `<strong>Error loading data:</strong> ${error.message}<br>Please check your connection and try refreshing the page.`;
+                errorDiv.innerHTML = `<strong>Fehler beim Laden der Daten:</strong> ${error.message}<br>Bitte überprüfe deine Verbindung und versuche, die Seite zu aktualisieren.`;
             }
         }
         

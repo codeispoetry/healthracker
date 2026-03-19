@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weight History - Health Tracker</title>
+    <title>Gewicht - Health Tracker</title>
     
     <!-- PWA Meta Tags -->
     <meta name="description" content="View your weight tracking history and trends">
@@ -164,10 +164,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Gewichtsverlauf</h1>
+            <h1>📊 Gewicht</h1>
             <div style="display: flex; gap: 10px;">
                 <a href="blood.html" class="nav-link">🩺 Blutdruck</a>
-                <a href="index.html" class="nav-link">← Neuer Eintrag</a>
+                <a href="index.html" class="nav-link">← Neu</a>
             </div>
         </div>
         
@@ -177,7 +177,7 @@
 
         
         <div id="loading" class="loading">
-            <p>🔄 Loading your weight data...</p>
+            <p>🔄 Lade deine Gewichtsdaten...</p>
         </div>
         
         <div id="error" class="error" style="display: none;">
@@ -185,8 +185,8 @@
         </div>
         
         <div id="noData" class="no-data" style="display: none;">
-            <p>📝 No weight data found.</p>
-            <p><a href="index.html" class="nav-link">Add your first weight entry</a></p>
+            <p>📝 Keine Gewichtsdaten gefunden.</p>
+            <p><a href="index.html" class="nav-link">Füge deinen ersten Gewichtseintrag hinzu</a></p>
         </div>
         
         <div id="tableContainer" style="display: none;">
@@ -234,7 +234,7 @@
                 document.getElementById('loading').style.display = 'none';
                 const errorDiv = document.getElementById('error');
                 errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `<strong>Error loading data:</strong> ${error.message}<br>Please check your connection and try refreshing the page.`;
+                errorDiv.innerHTML = `<strong>Fehler beim Laden der Daten:</strong> ${error.message}<br>Bitte überprüfe deine Verbindung und versuche, die Seite zu aktualisieren.`;
             }
         }
         
