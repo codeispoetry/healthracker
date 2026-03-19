@@ -218,7 +218,7 @@
             </div>
             <div class="legend-item">
                 <div class="legend-dot elevated"></div>
-                Erhöht ( &gt; 140/90)
+                Hypertonisch ( &gt; 140/90)
             </div>
         </div>
         
@@ -284,9 +284,9 @@
         
         function categorizeBP(systolic, diastolic) {
             if (systolic > 140 || diastolic > 90) {
-                return { category: 'Erhöht', class: 'elevated', color: '#ffc107' };
+                return { category: 'Hypertonisch', class: 'elevated', color: '#ffc107' };
             } else {
-                return { category: 'Normal', class: 'normal', color: '#28a745' };
+                return { category: 'Normal/Hochnormal', class: 'normal', color: '#28a745' };
             }
         }
         
