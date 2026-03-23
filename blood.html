@@ -340,19 +340,31 @@
             
             const tbody = document.querySelector('#dataTable tbody');
             tbody.innerHTML = '';
+
+            var lastWeekday = '';
             
             bpData.forEach((entry, index) => {
                 const row = document.createElement('tr');
                 const category = categorizeBP(entry.systolic, entry.diastolic);
                 
                 // Add category class to row
-                row.classList.add(category.class);
+
                 
                 // Format timestamp
                 const date = new Date(entry.timestamp);
+                const weekday = date.toLocaleDateString([], { weekday: 'long' });
                 const formattedDate = date.toLocaleDateString([], { weekday: 'long', day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Uhr";
       
                 
+                row.classList.add(category.class);
+                if(weekday !== lastWeekday) {
+                    const addRow = document.createElement('tr');
+                    addRow.classList.add(weekday.toLowerCase());
+                    addRow.innerHTML = `<td colspan="3" style="background-color: white;height: 10px"></td>`;
+                    tbody.appendChild(addRow);
+                }
+                row.classList.add(weekday.toLowerCase());
+
                 row.innerHTML = `
                     <td>${formattedDate}</td>
                     <td><span class="bp-reading">${entry.systolic}/${entry.diastolic} mmHg</span></td>
@@ -360,6 +372,8 @@
                 `;
                 
                 tbody.appendChild(row);
+
+                lastWeekday = weekday
             });
             
             document.getElementById('tableContainer').style.display = 'block';

@@ -195,7 +195,7 @@
                     <tr>
                         <th>Datum & Uhrzeit</th>
                         <th>Gewicht (kg)</th>
-                        <th>Trend</th>
+                        <th>Änderung seit einer Woche</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -281,15 +281,18 @@
                 let trendHTML = '';
                 if (index < weightData.length - 1) {
                     const currentWeight = entry.weight;
-                    const previousWeight = weightData[index + 1].weight;
-                    const change = currentWeight - previousWeight;
+                    const previousWeight = weightData[index + 7]?.weight;
                     
-                    if (Math.abs(change) < 0.1) {
+                    const change = currentWeight - previousWeight;
+                
+                    if (previousWeight && Math.abs(change) < 0.1) {
                         trendHTML = '<span class="weight-trend trend-stable">→ Stabil</span>';
                     } else if (change > 0) {
                         trendHTML = `<span class="weight-trend trend-up">↗ +${change.toFixed(1)} kg</span>`;
-                    } else {
+                    } else if (change < 0) {
                         trendHTML = `<span class="weight-trend trend-down">↘ ${change.toFixed(1)} kg</span>`;
+                    } else {
+                        trendHTML = '<span class="weight-trend trend-stable"></span>';
                     }
                 }
                 
