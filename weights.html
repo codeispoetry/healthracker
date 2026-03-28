@@ -195,7 +195,7 @@
                     <tr>
                         <th>Datum & Uhrzeit</th>
                         <th>Gewicht (kg)</th>
-                        <th>Änderung seit einer Woche</th>
+                        <th>Änderung</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -281,7 +281,7 @@
                 let trendHTML = '';
                 if (index < weightData.length - 1) {
                     const currentWeight = entry.weight;
-                    const previousWeight = weightData[index + 7]?.weight;
+                    const previousWeight = weightData[index + 1]?.weight;
                     
                     const change = currentWeight - previousWeight;
                 

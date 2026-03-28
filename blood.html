@@ -214,7 +214,7 @@
         <div class="bp-legend">
             <div class="legend-item">
                 <div class="legend-dot normal"></div>
-                Normal ( &lt;= 140/90)
+                (hoch)normal ( &lt;= 140/90)
             </div>
             <div class="legend-item">
                 <div class="legend-dot elevated"></div>
@@ -322,7 +322,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value">${normalCount}</div>
-                    <div class="stat-label">Normale Messungen</div>
+                    <div class="stat-label">(hoch)normale Messungen</div>
                 </div>
                 <div class="stat-card ${(elevatedCount + highCount + dangerousCount) > 0 ? 'warning' : ''}">
                     <div class="stat-value">${elevatedCount + highCount + dangerousCount}</div>
@@ -360,7 +360,7 @@
                 if(weekday !== lastWeekday) {
                     const addRow = document.createElement('tr');
                     addRow.classList.add(weekday.toLowerCase());
-                    addRow.innerHTML = `<td colspan="3" style="background-color: white;height: 10px"></td>`;
+                    addRow.innerHTML = `<td colspan="2" style="background-color: white;height: 10px"></td>`;
                     tbody.appendChild(addRow);
                 }
                 row.classList.add(weekday.toLowerCase());
@@ -368,7 +368,6 @@
                 row.innerHTML = `
                     <td>${formattedDate}</td>
                     <td><span class="bp-reading">${entry.systolic}/${entry.diastolic} mmHg</span></td>
-                    <td><span class="bp-category" style="background-color: ${category.color}">${category.category}</span></td>
                 `;
                 
                 tbody.appendChild(row);
