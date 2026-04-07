@@ -220,8 +220,8 @@
             const value = e.target.value;
 
             if ( (value.length == 2 && value.charAt(0) !== '1') || value.length == 3) {
-                document.getElementById('healthForm').submit();
-            }
+                // Trigger form submission programmatically
+                document.getElementById('submitBtn').click();}
         });
         
         function showResult(message, type) {
