@@ -206,6 +206,24 @@
             }
         });
         
+        // Auto-focus to diastolic field after entering 3 digits in systolic
+        document.getElementById('systolic').addEventListener('input', function(e) {
+            const value = e.target.value;
+            // Check if 3 digits have been entered (and no more)
+            if (value.length === 3) {
+                document.getElementById('diastolic').focus();
+            }
+        });
+
+        // Auto-send if filled out
+        document.getElementById('diastolic').addEventListener('input', function(e) {
+            const value = e.target.value;
+
+            if ( (value.length == 2 && value.charAt(0) !== '1') || value.length == 3) {
+                document.getElementById('healthForm').submit();
+            }
+        });
+        
         function showResult(message, type) {
             const result = document.getElementById('result');
             result.textContent = message;
