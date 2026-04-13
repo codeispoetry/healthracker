@@ -143,7 +143,7 @@
         .data-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .data-table tr.elevated {
+        .elevated {
             background-color: #fff3cd !important;
             border-left: 4px solid #ffc107;
         }
@@ -186,6 +186,16 @@
             color: #666;
         }
 
+        .lowest {
+            background-color: #d4edda !important;
+            border-left: 4px solid #28a745;
+        }
+
+        .highest {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545;
+        }
+
         @media (max-width: 600px) {
             .header {
                 flex-direction: column;
@@ -219,6 +229,14 @@
             <div class="legend-item">
                 <div class="legend-dot elevated"></div>
                 Hypertonisch ( &gt; 140/90)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot highest"></div>
+                Höchste Systolen (inkl. -10)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot lowest"></div>
+                Niedrigste Systolen (inkl. +10)
             </div>
         </div>
         
@@ -270,7 +288,6 @@
                     return;
                 }
                 
-                displayStats();
                 displayTable();
                 
             } catch (error) {
@@ -290,51 +307,6 @@
             }
         }
         
-        function displayStats() {
-            if (bpData.length === 0) return;
-            
-            const latest = bpData[0];
-            const avgSystolic = bpData.reduce((sum, entry) => sum + entry.systolic, 0) / bpData.length;
-            const avgDiastolic = bpData.reduce((sum, entry) => sum + entry.diastolic, 0) / bpData.length;
-            
-            // Count categories
-            let normalCount = 0, elevatedCount = 0, highCount = 0, dangerousCount = 0;
-            
-            bpData.forEach(entry => {
-                const cat = categorizeBP(entry.systolic, entry.diastolic);
-                switch (cat.class) {
-                    case 'normal': normalCount++; break;
-                    case 'elevated': elevatedCount++; break;
-                    case 'high': highCount++; break;
-                    case 'dangerous': dangerousCount++; break;
-                }
-            });
-            
-            const latestCat = categorizeBP(latest.systolic, latest.diastolic);
-            let currentCardClass = '';
-            if (latestCat.class === 'elevated') currentCardClass = 'warning';
-            if (latestCat.class === 'high' || latestCat.class === 'dangerous') currentCardClass = 'danger';
-            
-            const statsHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${Math.round(avgSystolic)}/${Math.round(avgDiastolic)}</div>
-                    <div class="stat-label">Durchschnitt</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${normalCount}</div>
-                    <div class="stat-label">(hoch)normale Messungen</div>
-                </div>
-                <div class="stat-card ${(elevatedCount + highCount + dangerousCount) > 0 ? 'warning' : ''}">
-                    <div class="stat-value">${elevatedCount + highCount + dangerousCount}</div>
-                    <div class="stat-label">Erhöhte Messungen</div>
-                </div>
-            `;
-            
-            document.getElementById('stats').innerHTML = statsHTML;
-            document.getElementById('stats').style.display = 'grid';
-        }
-        
-  
         function displayTable() {
             if (bpData.length === 0) return;
             
@@ -346,6 +318,11 @@
             bpData.forEach((entry, index) => {
                 const row = document.createElement('tr');
                 const category = categorizeBP(entry.systolic, entry.diastolic);
+
+                const lowestSystolic = Math.min(...bpData.map(e => e.systolic));
+                const lowestDiastolic = Math.min(...bpData.map(e => e.diastolic));
+                const highestSystolic = Math.max(...bpData.map(e => e.systolic));
+                const highestDiastolic = Math.max(...bpData.map(e => e.diastolic));
                 
                 // Add category class to row
 
@@ -356,7 +333,14 @@
                 const formattedDate = date.toLocaleDateString([], { weekday: 'long', day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Uhr";
       
                 
-                row.classList.add(category.class);
+                if(Math.abs(entry.systolic - highestSystolic) < 10) {
+                    row.classList.add('highest');
+                } else if (Math.abs(entry.systolic - lowestSystolic) < 10) {  
+                    row.classList.add('lowest');
+                } else {
+                    row.classList.add(category.class);
+                }
+
                 if(weekday !== lastWeekday) {
                     const addRow = document.createElement('tr');
                     addRow.classList.add(weekday.toLowerCase());
@@ -369,6 +353,8 @@
                     <td>${formattedDate}</td>
                     <td><span class="bp-reading">${entry.systolic}/${entry.diastolic} mmHg</span></td>
                 `;
+
+                
                 
                 tbody.appendChild(row);
 
