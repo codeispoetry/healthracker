@@ -146,6 +146,11 @@
         .trend-stable {
             color: #6c757d;
         }
+        .minimum {
+            background-color: #078360 !important;
+            color: white;
+            font-weight: bold;
+        }
         @media (max-width: 600px) {
             .header {
                 flex-direction: column;
@@ -226,7 +231,6 @@
                     return;
                 }
                 
-                displayStats();
                 displayTable();
                 
             } catch (error) {
@@ -238,32 +242,6 @@
             }
         }
         
-        function displayStats() {
-            if (weightData.length === 0) return;
-            
-            const weights = weightData.map(entry => entry.weight);
-            const currentWeight = weights[0]; // First entry (most recent)
-            const minWeight = Math.min(...weights);
-            const maxWeight = Math.max(...weights);
-            const avgWeight = weights.reduce((a, b) => a + b, 0) / weights.length;
-            
-            // Calculate weight change
-            let weightChange = 0;
-            let changeDirection = '';
-            if (weightData.length > 1) {
-                const previousWeight = weights[1];
-                weightChange = currentWeight - previousWeight;
-                if (Math.abs(weightChange) < 0.1) {
-                    changeDirection = 'stable';
-                } else if (weightChange > 0) {
-                    changeDirection = 'up';
-                } else {
-                    changeDirection = 'down';
-                }
-            }
-            
-        }
-       
         function displayTable() {
             if (weightData.length === 0) return;
             
@@ -282,8 +260,14 @@
                 if (index < weightData.length - 1) {
                     const currentWeight = entry.weight;
                     const previousWeight = weightData[index + 1]?.weight;
+                    const lowestWeight = Math.min(...weightData.map(e => e.weight));
                     
                     const change = currentWeight - previousWeight;
+
+                    if(currentWeight === lowestWeight) {
+                        row.classList.add('minimum');
+                        trendHTML = '<span class="weight-trend minimum">🏆 Niedrigster Wert!</span>';
+                    } else
                 
                     if (previousWeight && Math.abs(change) < 0.1) {
                         trendHTML = '<span class="weight-trend trend-stable">→ Stabil</span>';

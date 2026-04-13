@@ -190,6 +190,13 @@
                     const message = (weight ? `Gewicht: ${weight} kg` : '') + 
                                     (systolic && diastolic ? `, Blutdruck: ${systolic}/${diastolic} mmHg` : '');
                     showResult(`Gespeichert! ${message}`, 'success');
+
+                    if (systolicInput.value != '' ) {
+                        window.location.href = 'blood.html'; // Redirect to blood pressure page if blood pressure was entered
+                    } else  {
+                        window.location.href = 'weights.html'; // Redirect to weight page if weight was entered
+                    }
+
                     weightInput.value = ''; // Clear the form
                     systolicInput.value = '';
                     diastolicInput.value = '';
