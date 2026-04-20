@@ -151,6 +151,34 @@
             color: white;
             font-weight: bold;
         }
+        .total-loss-banner {
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2e7d32, #43a047);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+        .total-loss-title {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            margin-bottom: 4px;
+        }
+        .total-loss-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .total-loss-subtext {
+            margin-top: 6px;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+        .total-loss-weekly {
+            margin-top: 4px;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
         @media (max-width: 600px) {
             .header {
                 flex-direction: column;
@@ -174,6 +202,13 @@
                 <a href="blood.html" class="nav-link">🩺 Blutdruck</a>
                 <a href="index.html" class="nav-link">← Neu</a>
             </div>
+        </div>
+
+        <div id="totalLossBanner" class="total-loss-banner" style="display: none;">
+            <div class="total-loss-title">Gesamtverlauf</div>
+            <div id="totalLossValue" class="total-loss-value"></div>
+            <div id="totalLossSubtext" class="total-loss-subtext"></div>
+            <div id="totalLossWeekly" class="total-loss-weekly"></div>
         </div>
         
         <div id="stats" class="stats-grid" style="display: none;">
@@ -230,6 +265,8 @@
                     document.getElementById('noData').style.display = 'block';
                     return;
                 }
+
+                updateTotalLossBanner();
                 
                 displayTable();
                 
@@ -240,6 +277,41 @@
                 errorDiv.style.display = 'block';
                 errorDiv.innerHTML = `<strong>Fehler beim Laden der Daten:</strong> ${error.message}<br>Bitte überprüfe deine Verbindung und versuche, die Seite zu aktualisieren.`;
             }
+        }
+
+        function updateTotalLossBanner() {
+            if (weightData.length < 2) return;
+
+            const newestWeight = weightData[0].weight;
+            const oldestWeight = weightData[weightData.length - 1].weight;
+            const newestDate = new Date(weightData[0].timestamp);
+            const oldestDate = new Date(weightData[weightData.length - 1].timestamp);
+            const diff = oldestWeight - newestWeight;
+            const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+            const weeks = Math.max((newestDate - oldestDate) / msPerWeek, 1 / 7);
+            const avgPerWeek = Math.abs(diff) / weeks;
+
+            const valueEl = document.getElementById('totalLossValue');
+            const subtextEl = document.getElementById('totalLossSubtext');
+            const weeklyEl = document.getElementById('totalLossWeekly');
+            const bannerEl = document.getElementById('totalLossBanner');
+
+            if (diff > 0) {
+                valueEl.textContent = `- ${diff.toFixed(1)} kg`;
+                subtextEl.textContent = `Du hast seit dem ersten Eintrag ${diff.toFixed(1)} kg abgenommen.`;
+                weeklyEl.textContent = `Durchschnittlicher Gewichtsverlust: ${avgPerWeek.toFixed(2)} kg/Woche`;
+            } else if (diff < 0) {
+                const gained = Math.abs(diff);
+                valueEl.textContent = `+ ${gained.toFixed(1)} kg`;
+                subtextEl.textContent = `Seit dem ersten Eintrag hast du ${gained.toFixed(1)} kg zugenommen.`;
+                weeklyEl.textContent = `Durchschnittliche Gewichtszunahme: ${avgPerWeek.toFixed(2)} kg/Woche`;
+            } else {
+                valueEl.textContent = '0.0 kg';
+                subtextEl.textContent = 'Dein Gewicht ist seit dem ersten Eintrag unverändert.';
+                weeklyEl.textContent = 'Durchschnittliche Veränderung: 0.00 kg/Woche';
+            }
+
+            bannerEl.style.display = 'block';
         }
         
         function displayTable() {
