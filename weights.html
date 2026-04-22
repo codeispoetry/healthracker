@@ -296,20 +296,10 @@
             const weeklyEl = document.getElementById('totalLossWeekly');
             const bannerEl = document.getElementById('totalLossBanner');
 
-            if (diff > 0) {
-                valueEl.textContent = `- ${diff.toFixed(1)} kg`;
-                subtextEl.textContent = `Du hast seit dem ersten Eintrag ${diff.toFixed(1)} kg abgenommen.`;
-                weeklyEl.textContent = `Durchschnittlicher Gewichtsverlust: ${avgPerWeek.toFixed(2)} kg/Woche`;
-            } else if (diff < 0) {
-                const gained = Math.abs(diff);
-                valueEl.textContent = `+ ${gained.toFixed(1)} kg`;
-                subtextEl.textContent = `Seit dem ersten Eintrag hast du ${gained.toFixed(1)} kg zugenommen.`;
-                weeklyEl.textContent = `Durchschnittliche Gewichtszunahme: ${avgPerWeek.toFixed(2)} kg/Woche`;
-            } else {
-                valueEl.textContent = '0.0 kg';
-                subtextEl.textContent = 'Dein Gewicht ist seit dem ersten Eintrag unverändert.';
-                weeklyEl.textContent = 'Durchschnittliche Veränderung: 0.00 kg/Woche';
-            }
+            valueEl.textContent = `- ${diff.toFixed(1)} kg`;
+            subtextEl.textContent = `Du hast in ${weeks.toFixed(0)} Wochen ${diff.toFixed(0)} kg abgenommen.`;
+            weeklyEl.textContent = `Durchschnittlicher Gewichtsverlust: ${avgPerWeek.toFixed(2)} kg/Woche`;
+            
 
             bannerEl.style.display = 'block';
         }
