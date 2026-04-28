@@ -230,6 +230,19 @@
                 // Trigger form submission programmatically
                 document.getElementById('submitBtn').click();}
         });
+
+        document.getElementById('weight').addEventListener('input', function(e) {
+            const value = e.target.value;
+
+            if ( value.length == 3 ) {
+                if(value < 100 ) {
+                    return
+                }
+
+                e.target.value = value / 10
+                // Trigger form submission programmatically
+                document.getElementById('submitBtn').click();}
+        });
         
         function showResult(message, type) {
             const result = document.getElementById('result');
