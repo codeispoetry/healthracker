@@ -17,6 +17,7 @@
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -314,22 +315,18 @@
             if (weightData.length === 0) return;
 
             const sorted = [...weightData].reverse();
-            const labels = sorted.map(e => {
-                const d = new Date(e.timestamp);
-                return d.toLocaleDateString([], { day: '2-digit', month: 'short' });
-            });
-            const values = sorted.map(e => e.weight);
+            const points = sorted.map(e => ({ x: new Date(e.timestamp), y: e.weight }));
 
+            const values = sorted.map(e => e.weight);
             const min = Math.min(...values);
             const max = Math.max(...values);
 
             new Chart(document.getElementById('weightChart'), {
                 type: 'line',
                 data: {
-                    labels,
                     datasets: [{
                         label: 'Gewicht (kg)',
-                        data: values,
+                        data: points,
                         borderColor: '#4CAF50',
                         backgroundColor: 'rgba(76, 175, 80, 0.1)',
                         borderWidth: 2,
@@ -348,7 +345,15 @@
                             max: Math.ceil(max + 1),
                             ticks: { callback: v => v + ' kg' }
                         },
-                        x: { ticks: { maxTicksLimit: 10 } }
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'dd. MMM yyyy',
+                                displayFormats: { day: 'dd. MMM' }
+                            },
+                            ticks: { maxTicksLimit: 10 }
+                        }
                     }
                 }
             });
