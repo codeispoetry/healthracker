@@ -15,6 +15,8 @@
     
     <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -216,6 +218,10 @@
         </div>
 
         
+        <div id="chartContainer" class="chart-container" style="display: none;">
+            <canvas id="weightChart" class="chart"></canvas>
+        </div>
+
         <div id="loading" class="loading">
             <p>🔄 Lade deine Gewichtsdaten...</p>
         </div>
@@ -267,7 +273,7 @@
                 }
 
                 updateTotalLossBanner();
-                
+                displayChart();
                 displayTable();
                 
             } catch (error) {
@@ -304,6 +310,52 @@
             bannerEl.style.display = 'block';
         }
         
+        function displayChart() {
+            if (weightData.length === 0) return;
+
+            const sorted = [...weightData].reverse();
+            const labels = sorted.map(e => {
+                const d = new Date(e.timestamp);
+                return d.toLocaleDateString([], { day: '2-digit', month: 'short' });
+            });
+            const values = sorted.map(e => e.weight);
+
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+
+            new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Gewicht (kg)',
+                        data: values,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: true,
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            min: Math.floor(min - 1),
+                            max: Math.ceil(max + 1),
+                            ticks: { callback: v => v + ' kg' }
+                        },
+                        x: { ticks: { maxTicksLimit: 10 } }
+                    }
+                }
+            });
+
+            document.getElementById('chartContainer').style.display = 'block';
+        }
+
         function displayTable() {
             if (weightData.length === 0) return;
             
