@@ -320,25 +320,48 @@
             const values = sorted.map(e => e.weight);
             const min = Math.min(...values);
             const max = Math.max(...values);
+            const timestamps = points.map(p => p.x.getTime());
+            const n = timestamps.length;
+            const tMean = timestamps.reduce((a, b) => a + b, 0) / n;
+            const yMean = values.reduce((a, b) => a + b, 0) / n;
+            const slope = timestamps.reduce((s, t, i) => s + (t - tMean) * (values[i] - yMean), 0)
+                        / timestamps.reduce((s, t) => s + (t - tMean) ** 2, 0);
+            const intercept = yMean - slope * tMean;
+            const trendPoints = [
+                { x: points[0].x, y: slope * timestamps[0] + intercept },
+                { x: points[n - 1].x, y: slope * timestamps[n - 1] + intercept }
+            ];
 
             new Chart(document.getElementById('weightChart'), {
                 type: 'line',
                 data: {
-                    datasets: [{
-                        label: 'Gewicht (kg)',
-                        data: points,
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        fill: true,
-                        tension: 0.3,
-                    }]
+                    datasets: [
+                        {
+                            label: 'Gewicht (kg)',
+                            data: points,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: true,
+                            tension: 0.3,
+                        },
+                        {
+                            label: 'Trend',
+                            data: trendPoints,
+                            borderColor: 'rgba(255, 152, 0, 0.7)',
+                            borderWidth: 1.5,
+                            borderDash: [6, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0,
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { display: false } },
+                    plugins: { legend: { display: true, labels: { boxWidth: 20 } } },
                     scales: {
                         y: {
                             min: Math.floor(min - 1),
