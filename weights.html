@@ -194,6 +194,9 @@
             .data-table {
                 font-size: 0.9rem;
             }
+            .chart {
+                height: 600px;
+            }
         }
     </style>
 </head>
@@ -314,7 +317,13 @@
         function displayChart() {
             if (weightData.length === 0) return;
 
-            const sorted = [...weightData].reverse();
+            const isMobile = window.innerWidth <= 600;
+            let sorted = [...weightData].reverse();
+            if (isMobile) {
+                const cutoff = Date.now() - 10 * 24 * 60 * 60 * 1000;
+                sorted = sorted.filter(e => new Date(e.timestamp).getTime() >= cutoff);
+                if (sorted.length === 0) sorted = [...weightData].reverse().slice(-1);
+            }
             const points = sorted.map(e => ({ x: new Date(e.timestamp), y: e.weight }));
 
             const values = sorted.map(e => e.weight);
