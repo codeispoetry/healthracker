@@ -42,6 +42,7 @@ func main() {
 	http.HandleFunc("/post", handlePost)
 	http.HandleFunc("/list", handleList)
 	http.HandleFunc("/blood", handleBloodList)
+	http.HandleFunc("/delete", handleDelete)
 
 	// Start HTTPS server
 	fmt.Println("Health Tracker API server starting on :9001 (HTTPS)...")
@@ -140,7 +141,7 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT timestamp, weight FROM weights ORDER BY timestamp DESC")
+	rows, err := db.Query("SELECT id, timestamp, weight FROM weights ORDER BY timestamp DESC")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to query weights"})
@@ -149,6 +150,7 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type WeightEntry struct {
+		ID        int     `json:"id"`
 		Timestamp string  `json:"timestamp"`
 		Weight    float32 `json:"weight"`
 	}
@@ -167,7 +169,7 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 	var weightEntries []WeightEntry
 	for rows.Next() {
 		var entry WeightEntry
-		err := rows.Scan(&entry.Timestamp, &entry.Weight)
+		err := rows.Scan(&entry.ID, &entry.Timestamp, &entry.Weight)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to read weight entry"})
@@ -254,6 +256,57 @@ func handleBloodList(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(entries)
+}
+
+func handleDelete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "DELETE" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Method not allowed"})
+		return
+	}
+
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ID == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Invalid or missing id"})
+		return
+	}
+
+	db, err := sql.Open("sqlite3", "diary.db")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Database error"})
+		return
+	}
+	defer db.Close()
+
+	res, err := db.Exec("DELETE FROM weights WHERE id = ?", req.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to delete entry"})
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Entry not found"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
 }
 
 func initDB() {

@@ -117,6 +117,21 @@
         .data-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .btn-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 1rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0.5;
+            transition: opacity 0.15s;
+        }
+        .btn-delete:hover {
+            opacity: 1;
+            background-color: #fdecea;
+        }
         .loading {
             text-align: center;
             padding: 40px;
@@ -246,6 +261,7 @@
                         <th>Datum & Uhrzeit</th>
                         <th>Gewicht (kg)</th>
                         <th>Änderung</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -435,6 +451,7 @@
                     <td>${formattedDate}</td>
                     <td><strong>${entry.weight.toFixed(1)} kg</strong></td>
                     <td>${trendHTML}</td>
+                    <td><button class="btn-delete" onclick="deleteEntry(${entry.id})" title="Eintrag löschen">🗑</button></td>
                 `;
                 
                 tbody.appendChild(row);
@@ -443,6 +460,30 @@
             document.getElementById('tableContainer').style.display = 'block';
         }
         
+        async function deleteEntry(id) {
+            if (!confirm('Eintrag wirklich löschen?')) return;
+            try {
+                const response = await fetch('https://tom-rose.de:9001/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                weightData = weightData.filter(e => e.id !== id);
+                document.querySelector('#dataTable tbody').innerHTML = '';
+                document.getElementById('tableContainer').style.display = 'none';
+                document.getElementById('totalLossBanner').style.display = 'none';
+                if (weightData.length === 0) {
+                    document.getElementById('noData').style.display = 'block';
+                } else {
+                    updateTotalLossBanner();
+                    displayTable();
+                }
+            } catch (err) {
+                alert('Fehler beim Löschen: ' + err.message);
+            }
+        }
+
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', loadWeightData);
         
