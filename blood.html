@@ -263,6 +263,11 @@
             <canvas id="bpChart"></canvas>
         </div>
 
+        <div id="hourlyChartContainer" class="chart-container" style="display: none;">
+            <h3 style="margin: 0 0 15px; color: #555; font-size: 1rem;">Durchschnitt nach Tageszeit</h3>
+            <canvas id="hourlyChart"></canvas>
+        </div>
+
         <div id="tableContainer" style="display: none;">
             <table id="dataTable" class="data-table">
                
@@ -295,6 +300,7 @@
                 }
                 
                 displayChart();
+                displayHourlyChart();
                 displayTable();
                 
             } catch (error) {
@@ -364,6 +370,76 @@
             });
 
             document.getElementById('chartContainer').style.display = 'block';
+        }
+
+        function displayHourlyChart() {
+            const buckets = Array.from({ length: 24 }, () => ({ systolic: [], diastolic: [] }));
+            bpData.forEach(e => {
+                const hour = new Date(e.timestamp).getHours();
+                buckets[hour].systolic.push(e.systolic);
+                buckets[hour].diastolic.push(e.diastolic);
+            });
+
+            const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+            const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
+            const sysAvg = buckets.map(b => avg(b.systolic));
+            const diaAvg = buckets.map(b => avg(b.diastolic));
+            const counts = buckets.map(b => b.systolic.length);
+
+            new Chart(document.getElementById('hourlyChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Systolisch (Ø)',
+                            data: sysAvg,
+                            backgroundColor: 'rgba(220,53,69,0.6)',
+                            borderColor: '#dc3545',
+                            borderWidth: 1,
+                        },
+                        {
+                            label: 'Diastolisch (Ø)',
+                            data: diaAvg,
+                            backgroundColor: 'rgba(76,175,80,0.6)',
+                            borderColor: '#4CAF50',
+                            borderWidth: 1,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const v = ctx.parsed.y;
+                                    return v === null ? null : `${ctx.dataset.label}: ${v} mmHg`;
+                                },
+                                afterBody: (items) => {
+                                    const h = items[0]?.dataIndex;
+                                    const n = counts[h];
+                                    return n ? [`Messungen: ${n}`] : [];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'mmHg' },
+                            suggestedMin: 50,
+                            suggestedMax: 180
+                        },
+                        x: {
+                            title: { display: true, text: 'Uhrzeit' }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('hourlyChartContainer').style.display = 'block';
         }
 
         function categorizeBP(systolic, diastolic) {
